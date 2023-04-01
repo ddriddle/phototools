@@ -1,0 +1,8 @@
+#!/bin/bash
+#
+# Sync NAS photo folder to local storage
+#
+# Useful flags: --del
+
+rsync -rlt $@ --exclude '@eaDir' nas/ \
+      ddriddle@192.168.32.231:/volume1/photo

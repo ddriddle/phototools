@@ -1,0 +1,6 @@
+#!/bin/bash
+#
+# Compare local photo storage to NAS photo folder
+
+rsync -rlt --del -n --out-format='%i %n%L' --exclude '@eaDir' nas/ \
+      ddriddle@192.168.32.231:/volume1/photo

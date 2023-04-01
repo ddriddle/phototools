@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# $1 -- source
+# $2 -- dest
+
+exec exiftool -ee3 -r -P -o . \
+    '-FileName<$FileModifyDate/%f%-c.%e' \
+    '-FileName<$FileModifyDate/${model;s/ //g}/%f%-c.%e' \
+    '-FileName<$DateTimeOriginal/%f%-c.%e' \
+    '-FileName<$DateTimeOriginal/${model;s/ //g}/%f%-c.%e' \
+    -d "$2/%Y/%m/%d" "$1"

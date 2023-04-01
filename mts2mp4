@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -e  # Exit on error
+
+usage() {
+	echo "Usage: mts2mp4 source.mts dest.mp4"  
+	exit 1
+}
+
+if [[ $# -ne 2 ]]
+then
+	usage
+fi
+
+if [[ ! -f $1 ]]
+then
+	echo "$0: $1: No such file or directory"
+	exit 1
+fi
+
+if [[ -f $2 ]]
+then
+	echo "$0: $2: File already exists!"
+	exit 1
+fi
+
+TIME=$(bin/local2utc "$(exiftool -DateTimeOriginal $1 | sed 's/^.*: //')")
+
+echo "==========================="
+echo "$TIME"
+echo "==========================="
+
+ffmpeg -i "$1" -movflags +faststart -c copy "$2"
+exiftool -overwrite_original_in_place \
+	"-CreateDate=$TIME" \
+	"-ModifyDate=$TIME" \
+	"-TrackCreateDate=$TIME" \
+	"-TrackModifyDate=$TIME" \
+	"-MediaCreateDate=$TIME" \
+	"-MediaModifyDate=$TIME" \
+	-TagsFromFile "$1" "$2"
+
+exiftool "-CreationDate<DateTimeOriginal" $2
