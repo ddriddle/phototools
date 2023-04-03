@@ -1,5 +1,5 @@
 #!/usr/bin/env python 
-# Print missing files and their hashes from a given HASHDEEP file.
+# Print new files and their hashes from a given HASHDEEP file.
 
 import argparse
 import csv
@@ -18,25 +18,44 @@ FILENAME = 3  # Forth column is file name
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('files', nargs='+', type=Path)
+    parser.add_argument('files', nargs='*', type=Path)
     parser.add_argument('-f', '--file', default='HASHDEEP', 
         type=argparse.FileType('r'), help="HASHDEEP file to update")
     parser.add_argument('-r', '--recursive', action='store_true',
         help="Recursive mode: all subdirectories are traversed")
     parser.add_argument('-l', '--list', action='store_true',
-        help="List files without file sizes and hashes")
+        help="List new files without sizes and hashes")
+    parser.add_argument('--list-changed-only', action='store_true',
+        help="List changed or missing files")
+    parser.add_argument('-c', '--check', action='store_true',
+        help="Check that files in HASHDEEP still exist")
     return parser.parse_args()
 
-def load_hash_file(file):
+def load_hash_file(file, check=False, list_changes=False):
     csvfile = csv.reader(file)
     hashes = {}
 
     for row in itertools.islice(csvfile, HEADER, None):
         path = row[FILENAME]
         if path in hashes:
-            print(f"WARNING: duplicate file {path} found in {file}", file=sys.stderr)
+            print(f"WARNING: duplicate file {path} found in {file}", 
+                  file=sys.stderr)
         else:
             hashes[path] = row
+            try:
+                if check and Path(path).stat().st_size != int(row[SIZE]):
+                    print(f"WARNING: file size has changed: {path}",
+                        file=sys.stderr)
+                if list_changes and Path(path).stat().st_size != int(row[SIZE]):
+                    print(f"{path}", file=sys.stderr)
+            except FileNotFoundError as e:
+                if not list_changes:
+                    print(f"{e}", file=sys.stderr)
+                else:
+                    print(f"{path}", file=sys.stderr)
+                    
+    if list_changes:
+        sys.exit(0)
 
     return hashes
 
@@ -67,7 +86,7 @@ def new_files(args, hashes):
 
 def main():
     args = parse_args()
-    hashes = load_hash_file(args.file)
+    hashes = load_hash_file(args.file, args.check, args.list_changed_only)
 
     new_files(args, hashes)
 
