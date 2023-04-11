@@ -1,0 +1,38 @@
+#!/bin/bash
+#
+# Compare two image data. Strips metadata before comparing files.
+
+set -euo pipefail
+
+usage() {
+    echo "Usage: imgcmp FILE1 FILE1"
+    exit 1
+}
+
+if [[ $# -ne 2 ]]
+then
+    usage
+fi
+
+for file in "$1" "$2"
+do
+    if [[ ! -f "$file" ]]; then
+        echo "imgcmp: $file: No such file"
+		exit 1
+    fi
+done
+
+
+TMPDIR=`mktemp -d`
+trap "rm -rf $TMPDIR" EXIT
+
+IMG1=$TMPDIR/image1
+IMG2=$TMPDIR/image2
+
+mkfifo -- "$IMG1"
+mkfifo -- "$IMG2"
+
+convert -strip -- "$1" "$IMG1" &
+convert -strip -- "$2" "$IMG2" &
+
+cmp -- "$IMG1" "$IMG2"

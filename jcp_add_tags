@@ -9,6 +9,18 @@ usage() {
 LATITUDE=38.59584
 LONGITUDE=89.97979  # Minus
 
+event=""
+while getopts "e:" OPTION; do
+    case $OPTION in
+    e)
+        event="-Xmp-iptcExt:Event=$OPTARG"
+        ;;
+    *)
+        usage
+        ;;
+    esac
+done
+
 if [[ $# -eq 0 ]]
 then
     usage
@@ -29,7 +41,8 @@ exec exiftool -P -overwrite_original_in_place \
               '-model-='            '-model=studio' \
               '-Xmp-dc:Type-=studio'   '-Xmp-dc:Type+=studio' \
               '-Xmp-dc:Type-=portrait' '-Xmp-dc:Type+=portrait' \
-			  '-Xmp:LocationShownCity=Fairview Heights' \
-			  '-Xmp:LocationShownProvinceState=Illinois' \
-		      '-Xmp:LocationShownSublocation=St. Clair Square Mall' \
+              '-Xmp:LocationShownCity=Fairview Heights' \
+              '-Xmp:LocationShownProvinceState=Illinois' \
+              '-Xmp:LocationShownSublocation=St. Clair Square Mall' \
+              "$event" \
               -r -- "$@"

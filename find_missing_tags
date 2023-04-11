@@ -1,0 +1,14 @@
+#!/bin/bash
+
+usage() {
+	echo "Usage: find_missing_tags [DIRS]"
+	exit 1
+}
+
+if [[ $# -eq 0 ]]
+then
+	usage
+fi
+
+exec exiftool -Filepath -if 'not $DateTimeOriginal' -r -- "$@"
+#exec exiftool -Filepath -if '(not ($DateTimeOriginal or $CreateDate or $MediaCreateDate)' -r -- $@
