@@ -2,15 +2,15 @@
 # Add missing tags to JCPenney Portrait Studio pictures
 
 usage() {
-    echo "Usage: jcp_add_tags [DIRS]"
+    echo "Usage: jcp_add_tags [-e EVENT] [DIRS]"
     exit 1
 }
 
 LATITUDE=38.59584
-LONGITUDE=89.97979  # Minus
+LONGITUDE=-89.97979
 
-event=""
-while getopts "e:" OPTION; do
+event=
+while getopts "e:h" OPTION; do
     case $OPTION in
     e)
         event="-Xmp-iptcExt:Event=$OPTARG"
@@ -20,29 +20,34 @@ while getopts "e:" OPTION; do
         ;;
     esac
 done
+shift $((OPTIND-1))
 
 if [[ $# -eq 0 ]]
 then
     usage
 fi
 
-# Preserve time stamp (on POSIX) and create date (on macOS)
-# Do not overwrite existing tags
-exec exiftool -P -overwrite_original_in_place \
-              '-artist-='           '-artist=JCPenney Portrait Studio' \
-              '-CreateDate-='       '-CreateDate<FileCreateDate' \
-              '-DateTimeOriginal-=' '-DateTimeOriginal<FileCreateDate' \
-              '-GPSTimeStamp-='     '-GPSTimeStamp<FileCreateDate' \
-              '-GPSDateStamp-='     '-GPSDateStamp<FileCreateDate' \
-              '-GPSLatitude-='      "-GPSLatitude=$LATITUDE" \
-              '-GPSLatitudeRef-='   "-GPSLatitudeRef=$LATITUDE" \
-              '-GPSLongitude-='     "-GPSLongitude=$LONGITUDE" \
-              '-GPSLongitudeRef-='  "-GPSLongitudeRef=-$LONGITUDE" \
-              '-model-='            '-model=studio' \
-              '-Xmp-dc:Type-=studio'   '-Xmp-dc:Type+=studio' \
-              '-Xmp-dc:Type-=portrait' '-Xmp-dc:Type+=portrait' \
-              '-Xmp:LocationShownCity=Fairview Heights' \
-              '-Xmp:LocationShownProvinceState=Illinois' \
-              '-Xmp:LocationShownSublocation=St. Clair Square Mall' \
-              "$event" \
-              -r -- "$@"
+ARGS=(
+    # Preserve time stamp (on POSIX) and create date (on macOS)
+    '-P' '-overwrite_original_in_place'
+    # Do not overwrite existing tags
+    '-artist-='           '-artist=JCPenney Portrait Studio'
+    '-CreateDate-='       '-CreateDate<FileCreateDate'
+    '-DateTimeOriginal-=' '-DateTimeOriginal<FileCreateDate'
+    '-GPSTimeStamp-='     '-GPSTimeStamp<FileCreateDate'
+    '-GPSDateStamp-='     '-GPSDateStamp<FileCreateDate'
+    '-gpsposition-='      "-gpsposition=$LATITUDE, $LONGITUDE"
+    '-model-='            '-model=studio'
+    '-Xmp-dc:Type-=studio'   '-Xmp-dc:Type+=studio'
+    '-Xmp-dc:Type-=portrait' '-Xmp-dc:Type+=portrait'
+    '-Xmp:LocationShownCity=Fairview Heights'
+    '-Xmp:LocationShownProvinceState=Illinois'
+    '-Xmp:LocationShownSublocation=St. Clair Square Mall'
+)
+
+if [[ ! -z "$event" ]]
+then
+	ARGS+=("$event")
+fi
+
+exec exiftool "${ARGS[@]}" -r -- $@
